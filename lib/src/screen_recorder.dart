@@ -1,17 +1,16 @@
 import 'dart:typed_data';
-
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'dart:ui' as ui show Image, ImageByteFormat;
-
 import 'package:image/image.dart' as image;
 
 class ScreenRecorderController {
   ScreenRecorderController({
-    this.pixelRatio = 0.5,
+    this.pixelRatio = 1,
     this.skipFramesBetweenCaptures = 2,
     SchedulerBinding? binding,
   })  : _containerKey = GlobalKey(),
@@ -20,6 +19,7 @@ class ScreenRecorderController {
   final GlobalKey _containerKey;
   final SchedulerBinding _binding;
   final List<Frame> _frames = [];
+  Directory? tempDir;
 
   /// The pixelRatio describes the scale between the logical pixels and the size
   /// of the output image. Specifying 1.0 will give you a 1:1 mapping between
@@ -117,26 +117,38 @@ class ScreenRecorderController {
         print('Skipped frame while enconding');
       }
     }
-    final result = compute(_export, bytes);
+    final result = compute(_export, { 'frames': bytes, 'tempDir': tempDir });
     _frames.clear();
     return result;
   }
 
-  static Future<List<int>?> _export(List<RawFrame> frames) async {
+  static Future<List<int>?> _export(Map<String, dynamic> map) async {
+    List<RawFrame> frames = map['frames'];
+    Directory tempDir = map['tempDir'];
     final animation = image.Animation();
     animation.backgroundColor = Colors.transparent.value;
-    for (final frame in frames) {
-      final iAsBytes = frame.image.buffer.asUint8List();
-      final decodedImage = image.decodePng(iAsBytes);
+    for (int i=0; i<frames.length; i++) {
+      RawFrame frame = frames[i];
+      int byteOffset = frame.image.offsetInBytes;
+      int byteLength = frame.image.lengthInBytes;
+      Uint8List iAsBytes = frame.image.buffer.asUint8List(byteOffset, byteLength);
 
-      if (decodedImage == null) {
-        print('Skipped frame while enconding');
-        continue;
+
+      final decodedImage = image.decodePng(iAsBytes);
+      if (decodedImage != null) {
+        decodedImage?.duration = frame.durationInMillis;
+        animation.addFrame(decodedImage);
       }
-      decodedImage.duration = frame.durationInMillis;
-      animation.addFrame(decodedImage);
+
     }
-    return image.encodeGifAnimation(animation);
+    List<int>? gif = image.encodeGifAnimation(animation, samplingFactor: 100);
+    if (gif != null) {
+      String path = '${tempDir.path}/test_image.gif';
+      print(path);
+      final file = File(path);
+      file.writeAsBytesSync(gif!);
+    }
+    return gif;
   }
 }
 

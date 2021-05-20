@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:screen_recorder/screen_recorder.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
 }
 
@@ -51,18 +55,23 @@ class _MyHomePageState extends State<MyHomePage> {
               'You have pushed the button this many times:',
             ),
             ScreenRecorder(
-              height: 200,
-              width: 200,
               controller: controller,
-              child: Center(
-                child: Text(
-                  '$_counter',
-                  style: Theme.of(context).textTheme.headline4,
+              child: Container(
+                height: 100,
+                width: 100,
+                color: Colors.white,
+                child: Center(
+                  child: Text(
+                    '$_counter',
+                    style: Theme.of(context).textTheme.headline4,
+                  ),
                 ),
               ),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
+                Directory tempDir = await getTemporaryDirectory();
+                controller.tempDir = tempDir;
                 controller.start();
               },
               child: Text('Start'),
