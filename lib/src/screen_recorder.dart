@@ -112,7 +112,7 @@ class ScreenRecorderController {
     for (final frame in _frames) {
       final i = await frame.image.toByteData(format: ui.ImageByteFormat.png);
       if (i != null) {
-        bytes.add(RawFrame(16, i));
+        bytes.add(RawFrame(16 * 10, i)); // to account for image's encodeGIF which divides the frame duration by 10
       } else {
         print('Skipped frame while enconding');
       }
@@ -142,12 +142,12 @@ class ScreenRecorderController {
 
     }
     List<int>? gif = image.encodeGifAnimation(animation, samplingFactor: 100);
-    if (gif != null) {
-      String path = '${tempDir.path}/test_image.gif';
-      print(path);
-      final file = File(path);
-      file.writeAsBytesSync(gif!);
-    }
+    // if (gif != null) {
+    //   String path = '${tempDir.path}/test_image.gif';
+    //   print(path);
+    //   final file = File(path);
+    //   file.writeAsBytesSync(gif!);
+    // }
     return gif;
   }
 }
