@@ -19,6 +19,7 @@ class ScreenRecorderController {
   final GlobalKey _containerKey;
   final SchedulerBinding _binding;
   final List<Frame> _frames = [];
+  Function(ui.Image) onImageAvailable = (image) {};
   Directory? tempDir;
 
   /// The pixelRatio describes the scale between the logical pixels and the size
@@ -76,6 +77,7 @@ class ScreenRecorderController {
         return;
       }
       _frames.add(Frame(timestamp, image));
+      onImageAvailable(image);
     } catch (e) {
       print(e.toString());
     }
